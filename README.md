@@ -1,13 +1,4 @@
-Below is a **clean, professional `README.md`** you can directly place in your repository.
-It matches your project and the assignment requirements.
 
-Copy this into:
-
-```text
-README.md
-```
-
----
 
 # Production-Grade RAG Pipeline with Advanced Chunking & Multi-Tier Caching
 
@@ -186,7 +177,7 @@ rag-project2/
 ## 1. Clone Repository
 
 ```
-git clone <your_repo_url>
+git clone https://github.com/PriyankaNeogi/RAG_Advanced_Chunking.git
 cd rag-project2
 ```
 
@@ -356,5 +347,9 @@ The result is a **scalable and efficient retrieval system suitable for real-worl
 ---
 
 
-## OUTPUT - 
+## OUTPUT - This proves Tier-2 Semantic Cache works.
+
+<p align="center">
+  <img src="output.png" width="700">
+</p>
 

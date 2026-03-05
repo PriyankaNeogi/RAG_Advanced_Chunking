@@ -1,0 +1,11 @@
+openai
+pinecone
+tiktoken
+python-dotenv
+numpy
+scikit-learn
+pyyaml
+cohere
+python-dotenv
+tqdm
+pypdf

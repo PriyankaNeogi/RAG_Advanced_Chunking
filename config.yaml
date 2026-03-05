@@ -1,0 +1,10 @@
+embedding_model: text-embedding-3-small
+llm_model: gpt-4o-mini
+
+parent_chunk_size: 2000
+child_chunk_size: 400
+chunk_overlap: 100
+
+semantic_cache_threshold: 0.90
+
+top_k: 5

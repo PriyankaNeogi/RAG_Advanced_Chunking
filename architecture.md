@@ -362,5 +362,3 @@ The result is a **scalable, cost-efficient, production-ready RAG architecture**.
 
 ---
 
-
-If you want, I can also show you **one small improvement that makes your GitHub repo look much more “production-grade” to evaluators**.

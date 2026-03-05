@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -18,49 +18,47 @@ PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
+
 index = pc.Index(INDEX_NAME)
 
 
-def load_documents(data_folder):
+def load_documents(folder):
 
-    documents = []
+    docs = []
 
-    for file in os.listdir(data_folder):
+    for file in os.listdir(folder):
 
-        path = os.path.join(data_folder, file)
+        path = os.path.join(folder, file)
 
-        # TXT FILE SUPPORT
         if file.endswith(".txt"):
 
-            with open(path, "r", encoding="utf-8") as f:
-
-                documents.append({
+            with open(path) as f:
+                docs.append({
                     "text": f.read(),
                     "source": file
                 })
 
-        # PDF FILE SUPPORT (PAGE STREAMING)
         elif file.endswith(".pdf"):
 
             reader = PdfReader(path)
 
-            for page_num, page in enumerate(reader.pages):
+            for i, page in enumerate(reader.pages):
 
                 text = page.extract_text()
 
-                if not text:
-                    continue
+                if text:
+                    docs.append({
+                        "text": text,
+                        "source": file,
+                        "page": i + 1
+                    })
 
-                documents.append({
-                    "text": text,
-                    "source": file,
-                    "page": page_num + 1
-                })
-
-    return documents
+    return docs
 
 
 def ingest():
+
+    print("Loading documents...")
 
     documents = load_documents("data")
 
@@ -79,12 +77,11 @@ def ingest():
             )
 
             metadata = {
-            "child_text": child["text"],
-            "parent_text": parent_text,
-            "parent_id": str(child["parent_id"]),
-            "source": doc["source"],
-            "page": doc.get("page", -1)
-        }
+                "child_text": child["text"],
+                "parent_text": parent_text,
+                "source": doc["source"],
+                "page": doc.get("page", -1)
+            }
 
             vectors.append({
                 "id": f'{child["parent_id"]}_{len(child["text"])}',

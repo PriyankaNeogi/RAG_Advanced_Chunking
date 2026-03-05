@@ -1,25 +1,38 @@
-def parent_child_chunking(text, parent_size=2000, child_size=400):
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-    parents = []
-    children = []
 
-    for i in range(0, len(text), parent_size):
+def parent_child_chunking(text):
 
-        parent_text = text[i:i+parent_size]
+    parent_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=100
+    )
+
+    child_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=200,
+        chunk_overlap=40
+    )
+
+    parents = parent_splitter.split_text(text)
+
+    parent_chunks = []
+    child_chunks = []
+
+    for i, parent in enumerate(parents):
+
         parent_id = f"parent_{i}"
 
-        parents.append({
+        parent_chunks.append({
             "parent_id": parent_id,
-            "text": parent_text
+            "text": parent
         })
 
-        for j in range(0, len(parent_text), child_size):
+        children = child_splitter.split_text(parent)
 
-            child = parent_text[j:j+child_size]
-
-            children.append({
-                "text": child,
-                "parent_id": parent_id
+        for child in children:
+            child_chunks.append({
+                "parent_id": parent_id,
+                "text": child
             })
 
-    return parents, children
+    return parent_chunks, child_chunks

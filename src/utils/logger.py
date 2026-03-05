@@ -7,4 +7,4 @@ def get_logger():
         format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    return logging.getLogger("RAG_PIPELINE")
+    return logging.getLogger(__name__)

@@ -1,32 +1,35 @@
-from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 from src.utils.embeddings import get_embedding
 
-semantic_cache = []
 
-THRESHOLD = 0.90
+class SemanticCache:
 
+    def __init__(self, threshold=0.9):
+        self.cache = []
+        self.threshold = threshold
 
-def check(query):
+    def cosine_similarity(self, a, b):
+        return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-    query_embedding = get_embedding(query)
+    def get(self, query):
 
-    for item in semantic_cache:
+        query_emb = get_embedding(query)
 
-        sim = cosine_similarity(
-            [query_embedding],
-            [item["embedding"]]
-        )[0][0]
+        for item in self.cache:
 
-        if sim >= THRESHOLD:
+            score = self.cosine_similarity(query_emb, item["embedding"])
 
-            return item["response"]
+            if score > self.threshold:
+                return item["answer"]
 
-    return None
+        return None
 
+    def set(self, query, answer):
 
-def store(query, response):
+        emb = get_embedding(query)
 
-    semantic_cache.append({
-        "embedding": get_embedding(query),
-        "response": response
-    })
+        self.cache.append({
+            "query": query,
+            "embedding": emb,
+            "answer": answer
+        })

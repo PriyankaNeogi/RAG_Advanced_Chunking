@@ -1,9 +1,10 @@
-exact_cache = {}
+class ExactCache:
 
-def get(query):
+    def __init__(self):
+        self.cache = {}
 
-    return exact_cache.get(query)
+    def get(self, query):
+        return self.cache.get(query)
 
-def set(query, response):
-
-    exact_cache[query] = response
+    def set(self, query, answer):
+        self.cache[query] = answer

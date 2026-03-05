@@ -1,10 +1,9 @@
-embedding_model: text-embedding-3-small
 llm_model: gpt-4o-mini
 
-parent_chunk_size: 2000
-child_chunk_size: 400
-chunk_overlap: 100
+semantic_threshold: 0.85
 
-semantic_cache_threshold: 0.90
+pinecone_index: rag-index
 
-top_k: 5
+pinecone_env: us-east-1
+
+pinecone_api_key: YOUR_KEY

@@ -9,3 +9,5 @@ cohere
 python-dotenv
 tqdm
 pypdf
+langchain   
+langchain-text-splitters

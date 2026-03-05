@@ -1,10 +1,10 @@
-retrieval_cache = {}
+class RetrievalCache:
 
-def get(query):
+    def __init__(self):
+        self.cache = {}
 
-    return retrieval_cache.get(query)
+    def get(self, query):
+        return self.cache.get(query)
 
-
-def set(query, chunks):
-
-    retrieval_cache[query] = chunks
+    def set(self, query, chunks):
+        self.cache[query] = chunks

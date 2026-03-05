@@ -1,14 +1,12 @@
-def sliding_window_chunk(text, size=500, overlap=100):
+def sliding_window_chunking(text, window_size=400, stride=200):
 
     chunks = []
-    start = 0
 
-    while start < len(text):
+    for i in range(0, len(text), stride):
 
-        end = start + size
+        chunk = text[i:i + window_size]
 
-        chunks.append(text[start:end])
-
-        start += size - overlap
+        if chunk.strip():
+            chunks.append(chunk)
 
     return chunks

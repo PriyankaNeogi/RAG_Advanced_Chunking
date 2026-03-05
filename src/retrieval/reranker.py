@@ -1,9 +1,8 @@
-def rerank(query, chunks):
+class Reranker:
 
-    ranked = sorted(
-        chunks,
-        key=lambda x: len(x["metadata"]["child_text"]),
-        reverse=True
-    )
+    def rerank(self, query, chunks):
 
-    return ranked[:5]
+        # simple scoring placeholder
+        scored = sorted(chunks, key=lambda x: len(x), reverse=True)
+
+        return scored[:3]

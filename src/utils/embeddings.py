@@ -1,7 +1,12 @@
-from openai import OpenAI
 import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# load environment variables
+load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 def get_embedding(text):
 

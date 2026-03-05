@@ -1,5 +1,5 @@
-from pinecone import Pinecone
 import os
+from pinecone import Pinecone
 from src.utils.embeddings import get_embedding
 
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
@@ -9,12 +9,17 @@ index = pc.Index(os.getenv("PINECONE_INDEX_NAME"))
 
 def retrieve(query, top_k=5):
 
-    vector = get_embedding(query)
+    embedding = get_embedding(query)
 
     results = index.query(
-        vector=vector,
+        vector=embedding,
         top_k=top_k,
         include_metadata=True
     )
 
-    return results["matches"]
+    chunks = []
+
+    for match in results["matches"]:
+        chunks.append(match["metadata"]["parent_text"])
+
+    return chunks

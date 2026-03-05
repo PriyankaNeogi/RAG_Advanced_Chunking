@@ -1,184 +1,321 @@
-# Production-Grade RAG Pipeline Architecture
+Production-Grade RAG Pipeline with Advanced Chunking & Multi-Tier Caching
+1. System Overview
 
-## System Overview
+This project implements a production-grade Retrieval-Augmented Generation (RAG) pipeline designed to improve both efficiency and response quality in LLM-powered applications.
 
-This project implements a production-style Retrieval-Augmented Generation (RAG) pipeline with intelligent chunking and a three-tier caching system.
+Traditional RAG pipelines perform retrieval and generation for every query, which leads to:
 
-The goal is to reduce redundant LLM calls, improve retrieval quality, and simulate a scalable architecture used in real-world AI systems.
+Increased latency
 
----
+Higher API costs
 
-# High Level Architecture
+Redundant computation
 
-User Query
-↓
-Tier 1 Cache (Exact Match)
-↓
-Tier 2 Cache (Semantic Cache)
-↓
-Tier 3 Cache (Retrieval Cache)
-↓
-Vector Database (Pinecone)
-↓
-Reranker
-↓
-LLM Generator
-↓
-Final Answer
+To solve this, the system introduces:
 
----
+Parent-Child Chunking
 
-# Chunking Strategy
+Sliding Window Chunking
 
-## Parent-Child Chunking
+Three-Tier Caching System
 
-Documents are first split into large **parent chunks** and then into smaller **child chunks**.
+The pipeline uses:
 
-Example structure:
+Embeddings via OpenAI
 
-Document  
-├── Parent Chunk 1  
-│   ├── Child Chunk 1  
-│   ├── Child Chunk 2  
-│   └── Child Chunk 3  
+Vector search via Pinecone
 
-Retrieval happens at the **child chunk level**, while the **parent chunk provides full context to the LLM**.
+LLM response generation via OpenAI models.
 
-Benefits:
+2. System Architecture
+                ┌───────────────────┐
+                │     User Query     │
+                └─────────┬─────────┘
+                          │
+                          ▼
+                 ┌────────────────┐
+                 │ Exact Cache     │
+                 │ (Tier 1)        │
+                 └────────┬───────┘
+                          │ miss
+                          ▼
+                 ┌────────────────┐
+                 │ Semantic Cache  │
+                 │ (Tier 2)        │
+                 └────────┬───────┘
+                          │ miss
+                          ▼
+                 ┌────────────────┐
+                 │ Retrieval Cache │
+                 │ (Tier 3)        │
+                 └────────┬───────┘
+                          │ miss
+                          ▼
+                ┌────────────────────┐
+                │ Pinecone Retrieval │
+                └────────┬───────────┘
+                         │
+                         ▼
+                 ┌────────────────┐
+                 │ Reranking       │
+                 └────────┬───────┘
+                          │
+                          ▼
+                 ┌────────────────┐
+                 │ LLM Generation  │
+                 │ (OpenAI)        │
+                 └────────┬───────┘
+                          │
+                          ▼
+                   ┌─────────────┐
+                   │   Response   │
+                   └─────────────┘
+3. Chunking Strategy
+Parent-Child Chunking
 
-- Higher retrieval precision
-- Better contextual understanding
-- Reduced hallucination
+Parent-child chunking preserves document context.
 
----
+Parent Chunks
 
-## Sliding Window Chunking
+Large chunks representing broader document sections.
 
-The second chunking strategy used is **sliding window chunking with overlap**.
+Example configuration:
+
+Parent Chunk Size: 1000 characters  
+Parent Overlap: 100
+Child Chunks
+
+Smaller chunks used for vector search.
+
+Child Chunk Size: 200 characters  
+Child Overlap: 40
+Workflow
+
+Documents are split into parent chunks.
+
+Each parent chunk is further split into child chunks.
+
+Child chunks are embedded and stored in the vector database.
+
+During retrieval:
+
+Child chunks are searched.
+
+Their parent chunks are returned to the LLM.
+
+This ensures precise retrieval with full context.
+
+4. Second Chunking Strategy: Sliding Window
+
+A sliding window approach was implemented as an additional chunking strategy.
+
+Example configuration:
+
+Window Size: 400
+Stride: 200
+How it works
+
+Instead of splitting text into fixed chunks, overlapping windows slide through the text.
 
 Example:
 
-Chunk 1 → tokens 0–500  
-Chunk 2 → tokens 400–900  
-Chunk 3 → tokens 800–1300  
+Chunk 1 → characters 0–400  
+Chunk 2 → characters 200–600  
+Chunk 3 → characters 400–800
+Benefits
+
+Maintains context across chunk boundaries
+
+Reduces information loss
+
+Improves semantic retrieval accuracy
+
+Comparison
+Strategy	Strength
+Parent-Child	Best for hierarchical documents
+Sliding Window	Best for continuous text
+5. Three-Tier Caching Architecture
+
+To reduce redundant computation, the system implements three caching layers.
+
+Tier 1 — Exact Cache
+
+Checks if the query has been asked before.
+
+Example:
+
+Query: "What is hybrid search?"
+
+If an exact match exists, the cached answer is returned immediately.
+
+Benefits:
+
+Zero retrieval
+
+Zero LLM calls
+
+Lowest latency
+
+Tier 2 — Semantic Cache
+
+If no exact match exists, the query embedding is compared against cached queries.
+
+Similarity is measured using cosine similarity.
+
+If similarity exceeds threshold:
+
+Threshold: 0.90
+
+the cached response is returned.
+
+Example:
+
+Query 1: "What is hybrid search?"
+Query 2: "Explain hybrid search"
+
+These are semantically similar and can reuse cached answers.
+
+Tier 3 — Retrieval Cache
+
+Stores previously retrieved document chunks.
+
+If similar queries occur again:
+
+Pinecone retrieval is skipped
+
+Cached chunks are used directly
+
+This saves vector search time.
+
+6. Cache Storage
+
+For this implementation, caching uses in-memory dictionaries.
+
+Example:
+
+Exact Cache → {query: response}
+Semantic Cache → {embedding: response}
+Retrieval Cache → {query: retrieved_chunks}
+Why In-Memory Cache?
 
 Advantages:
 
-- Maintains context across chunk boundaries
-- Prevents information loss between chunks
-- Improves retrieval quality
+Extremely fast
 
----
+Simple implementation
 
-# Three-Tier Caching Architecture
+No external dependency
 
-To reduce redundant LLM calls and improve performance, three caching layers are implemented.
+Trade-off:
 
----
+Cache resets when the application restarts.
 
-## Tier 1: Exact Cache
+In production systems, Redis could be used instead.
 
-Stores:
+7. Query Flow Walkthrough
 
-Query → Response
+Example query:
 
-If the same query is asked again, the cached response is returned immediately without retrieval or LLM calls.
+User: What is hybrid search?
+Step 1 — Exact Cache
 
-Example:
+System checks if the query already exists.
 
-"What is RAG?"  
-→ Cached response returned instantly.
+If yes → return cached response.
 
----
+If no → continue.
 
-## Tier 2: Semantic Cache
+Step 2 — Semantic Cache
 
-Stores:
+Query embedding is compared with cached queries.
 
-Query Embedding → Response
+If similarity > threshold → return cached response.
 
-If a new query is **semantically similar** to a previous query (based on cosine similarity), the cached response is reused.
+If not → continue.
 
-Example:
+Step 3 — Retrieval Cache
 
-"What is RAG?"  
-"Explain Retrieval Augmented Generation"
+System checks if document chunks were previously retrieved.
 
-Both queries return the same cached answer.
+If yes → reuse cached chunks.
 
----
+If not → continue.
 
-## Tier 3: Retrieval Cache
+Step 4 — Vector Search
 
-Stores:
+Query embedding is sent to Pinecone.
 
-Query → Retrieved Chunks
+Top-K relevant chunks are retrieved.
 
-If the retrieval results for a similar query already exist, the system skips the vector database and directly passes cached chunks to the LLM.
+Step 5 — LLM Generation
 
-Benefits:
+Retrieved parent chunks are passed to the LLM.
 
-- Reduces vector DB calls
-- Improves latency
+The model generates the final answer.
 
----
+Step 6 — Cache Update
 
-# Query Flow
+The result is stored in:
 
-Example Query:
+Exact cache
 
-"What is Retrieval Augmented Generation?"
+Semantic cache
 
-Pipeline Execution:
+Retrieval cache
 
-1. Exact cache checked
-2. Semantic cache checked
-3. Retrieval cache checked
-4. Pinecone vector search
-5. Reranking
-6. Context sent to LLM
-7. Final answer generated
-8. Result stored in cache
+for future queries.
 
----
+8. Design Decisions
+Why Pinecone?
 
-# Design Decisions
+Chosen for:
 
-### Vector Database
+Fast vector search
 
-Pinecone was selected due to:
+Scalability
 
-- Fast similarity search
-- Managed infrastructure
-- Production scalability
+Managed infrastructure
 
-### Embeddings
+Why OpenAI Embeddings?
 
-OpenAI embeddings were used because they provide strong semantic representation for text retrieval tasks.
+Chosen because:
 
-### Caching Backend
+High semantic accuracy
 
-An in-memory dictionary cache was used for simplicity and fast lookups.
+Compatible with Pinecone
 
-In production environments, Redis or Memcached would be preferred.
+Easy API integration
 
----
+Why Parent-Child Chunking?
 
-# Trade-offs
+Because it balances:
 
-Pros:
+Retrieval precision
 
-- Modular architecture
-- Reduced LLM cost through caching
-- Better retrieval quality through parent-child chunking
+Context preservation
 
-Limitations:
+9. Future Improvements
 
-- In-memory cache does not persist across restarts
-- No distributed scaling
+Possible improvements include:
 
----
+Redis-based distributed caching
 
-# Conclusion
+Query normalization
 
-This architecture demonstrates how a traditional RAG pipeline can be improved using intelligent chunking and multi-layer caching to achieve better performance, scalability, and cost efficiency.
+Streaming responses
+
+Hybrid sparse + dense retrieval
+
+Monitoring and cache analytics
+
+Conclusion
+
+This system demonstrates how modern RAG pipelines can be optimized through:
+
+Intelligent chunking
+
+Multi-tier caching
+
+Efficient retrieval
+
+The result is a scalable, cost-efficient, production-ready RAG architecture.

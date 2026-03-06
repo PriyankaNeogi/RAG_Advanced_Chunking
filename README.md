@@ -347,7 +347,9 @@ The result is a **scalable and efficient retrieval system suitable for real-worl
 ---
 
 
-## OUTPUT - This proves Tier-2 Semantic Cache works.
+## OUTPUT - three-tier caching architecture is functioning correctly.
+
+
 
 <p align="center">
   <img src="output.png" width="700">
